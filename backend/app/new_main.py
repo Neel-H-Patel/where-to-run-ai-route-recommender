@@ -2,7 +2,7 @@ from fastapi import FastAPI, Query
 import os
 from dotenv import load_dotenv
 import requests
-from typing import List, Dict, Tuple, Optional
+from typing import List, Dict, Tuple, Optional, Any
 from openai import OpenAI
 import json
 import re
@@ -46,7 +46,7 @@ def get_temp_routes() -> List[Dict]:
 
 # may be unnecessary as it correlates with popularity closely (inversely though)
 @app.post("/safety-data")
-def fetch_safety_data(routes: List[Dict], location: str):
+def fetch_safety_data(routes: List[Dict], lat, lon):
     """Fetch safety data from Google Maps API"""
     completion = client.chat.completions.create(
         model="gpt-4o-mini",
@@ -57,7 +57,7 @@ def fetch_safety_data(routes: List[Dict], location: str):
                                           "the routes as JSON (no explanation)"},
             {
                 "role": "user",
-                "content": f"location: {location}\n routes: {routes}\n"
+                "content": f"location: {lat, lon}\n routes: {routes}\n"
             }
         ]
     )
@@ -90,7 +90,7 @@ def fetch_weather_data(lat: float, lon: float) -> Dict:
     return response.json() if response.status_code == 200 else {"error": "Failed to fetch weather data"}
 
 @app.post("/rank-routes")
-def rank_routes(routes: List[Dict], elevation_pref: str, weather: Dict):
+def rank_routes(routes: List[Dict], preferences: Dict, weather: Dict):
     """Rank routes based on elevation, safety, and weather conditions."""
     completion = client.chat.completions.create(
         model="gpt-4o-mini",
@@ -100,7 +100,7 @@ def rank_routes(routes: List[Dict], elevation_pref: str, weather: Dict):
                                           " as JSON (no explanation)"},
             {
                 "role": "user",
-                "content": f"elevation preference: {elevation_pref}\n routes: {routes}\n weather: {weather}"
+                "content": f"Preferences: {preferences}\n routes: {routes}\n weather: {weather}"
             }
         ]
     )
@@ -123,6 +123,53 @@ def rank_routes(routes: List[Dict], elevation_pref: str, weather: Dict):
             return {"error": "Invalid response format"}
     except json.JSONDecodeError:
         return {"error": "Failed to parse AI response"}
+
+@app.post("/get-ranked-routes")
+def get_ranked_routes(
+    location: str,
+    distance: float = Query(5.0, description="Preferred route distance in km"),
+    safety: str = Query("high", description="Preferred safety level: low, moderate, high"),
+    elevation: float = Query(50.0, description="Preferred elevation gain in meters"),
+    terrain: str = Query("road", description="Preferred terrain type: trail, road, park")
+) -> List[Dict]:
+    """
+    Master function: Gets coordinates, weather, safety data, and returns ranked routes.
+    """
+
+    # Step 1: Convert preferences into a dictionary
+    preferences = {
+        "distance": distance,
+        "safety": safety,
+        "elevation": elevation,
+        "terrain": terrain
+    }
+
+    # Step 2: Get coordinates
+    coords = get_coordinates_from_location(location)
+    if not coords:
+        return {"error": "Invalid location provided"}
+
+    lat, lon = coords
+
+    # Step 3: Get weather data
+    weather = fetch_weather_data(lat, lon)
+    if "error" in weather:
+        return {"error": "Could not retrieve weather data"}
+
+    # Step 4: Get temporary routes (this would be replaced by real routes in production)
+    routes = get_temp_routes()
+
+    # Step 5: Fetch safety scores
+    routes_with_safety = fetch_safety_data(routes, lat, lon)
+    if isinstance(routes_with_safety, dict) and "error" in routes_with_safety:
+        return routes_with_safety  # Return error if safety data fails
+
+    # Step 6: Rank routes based on user preferences
+    ranked_routes = rank_routes(routes_with_safety, preferences, weather)
+    if isinstance(ranked_routes, dict) and "error" in ranked_routes:
+        return ranked_routes  # Return error if ranking fails
+
+    return ranked_routes
 
 
 
