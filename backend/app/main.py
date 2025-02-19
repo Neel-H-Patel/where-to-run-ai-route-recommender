@@ -127,7 +127,7 @@ def get_ranked_routes(
     safety: str = Query("high", description="Preferred safety level: low, moderate, high"),
     elevation: float = Query(50.0, description="Preferred elevation gain in meters"),
     terrain: str = Query("road", description="Preferred terrain type: trail, road, park")
-) -> List[Dict]:
+) -> Union[List[Dict[str, Any]], Dict[str, str]]:
     """
     Master function: Gets coordinates, weather, safety data, and returns ranked routes.
     """
