@@ -1,15 +1,27 @@
 <div class="container">
   <h2>Find Your Best Running Route</h2>
 
-  <button (click)="fetchRoutes()" [disabled]="isLoading">
+  <mat-progress-bar *ngIf="isLoading" mode="indeterminate"></mat-progress-bar>
+
+  <button mat-raised-button color="primary" (click)="fetchRoutes()" [disabled]="isLoading">
     {{ isLoading ? 'Loading...' : 'Get Routes' }}
   </button>
 
-  <ul *ngIf="routes.length > 0">
-    <li *ngFor="let route of routes">
-      <strong>{{ route.name }}</strong> - Safety Score: {{ route.safety_score }}
-    </li>
-  </ul>
+  <mat-list *ngIf="routes.length > 0">
+    <mat-list-item *ngFor="let route of routes">
+      <mat-card class="route-card">
+        <mat-card-header>
+          <mat-card-title>{{ route.name }}</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <p>🏅 Safety Score: <strong>{{ route.safety_score }}</strong></p>
+        </mat-card-content>
+      </mat-card>
+    </mat-list-item>
+  </mat-list>
 
-  <p *ngIf="routes.length === 0 && !isLoading">No routes found.</p>
+  <mat-card *ngIf="routes.length === 0 && !isLoading" class="empty-card">
+    <mat-card-content>No routes found.</mat-card-content>
+  </mat-card>
 </div>
+

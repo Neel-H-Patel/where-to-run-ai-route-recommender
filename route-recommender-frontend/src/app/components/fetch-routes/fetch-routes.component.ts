@@ -1,6 +1,10 @@
 import { Component } from '@angular/core';
 import { ApiService } from '../../services/api.service';
 import {NgForOf, NgIf} from "@angular/common";
+import {MatProgressBar} from "@angular/material/progress-bar";
+import {MatList, MatListItem} from "@angular/material/list";
+import {MatCard, MatCardContent, MatCardHeader, MatCardTitle} from "@angular/material/card";
+import {MatButton} from "@angular/material/button";
 
 @Component({
   selector: 'app-fetch-routes',
@@ -8,7 +12,15 @@ import {NgForOf, NgIf} from "@angular/common";
   standalone: true,
   imports: [
     NgIf,
-    NgForOf
+    NgForOf,
+    MatProgressBar,
+    MatList,
+    MatListItem,
+    MatCard,
+    MatCardTitle,
+    MatCardContent,
+    MatCardHeader,
+    MatButton
   ],
   styleUrls: ['./fetch-routes.component.scss']
 })
