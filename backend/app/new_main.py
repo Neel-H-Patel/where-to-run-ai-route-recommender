@@ -89,6 +89,42 @@ def fetch_weather_data(lat: float, lon: float) -> Dict:
     response = requests.get(url)
     return response.json() if response.status_code == 200 else {"error": "Failed to fetch weather data"}
 
+@app.post("/rank-routes")
+def rank_routes(routes: List[Dict], elevation_pref: str, weather: Dict):
+    """Rank routes based on elevation, safety, and weather conditions."""
+    completion = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "Given the following preferences, routes, and weather, rank the routes from "
+                                          "best to worst. Return only the routes in the order that you ranked them"
+                                          " as JSON (no explanation)"},
+            {
+                "role": "user",
+                "content": f"elevation preference: {elevation_pref}\n routes: {routes}\n weather: {weather}"
+            }
+        ]
+    )
+
+    raw_response = completion.choices[0].message.content.strip()  # Remove whitespace
+
+    # Extract JSON using regex in case there is unwanted text
+    match = re.search(r"\[.*\]", raw_response, re.DOTALL)
+    if match:
+        cleaned_json = match.group(0)  # Extract the JSON part
+    else:
+        return {"error": "AI response did not contain valid JSON"}
+
+    try:
+        # Convert the cleaned response to a Python list
+        safety_data = json.loads(cleaned_json)
+        if isinstance(safety_data, list):
+            return safety_data
+        else:
+            return {"error": "Invalid response format"}
+    except json.JSONDecodeError:
+        return {"error": "Failed to parse AI response"}
+
+
 
 if __name__ == "__main__":
     import uvicorn
