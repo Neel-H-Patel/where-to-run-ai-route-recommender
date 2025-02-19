@@ -6,12 +6,22 @@ from typing import List, Dict, Tuple, Optional, Any, Union
 from openai import OpenAI
 import json
 import re
+from fastapi.middleware.cors import CORSMiddleware
 
 # load environment variables
 load_dotenv()
 
 # initialize backend
 app = FastAPI()
+
+# deal with CORS errors
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Adjust for production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # get API keys from env variables
 GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
@@ -120,7 +130,7 @@ def extract_json_from_response(raw_response: str) -> Union[List[Dict[str, Any]],
     except json.JSONDecodeError:
         return {"error": "Failed to parse AI response"}
 
-@app.post("/get-ranked-routes")
+@app.get("/get-ranked-routes")
 def get_ranked_routes(
     location: str,
     distance: float = Query(5.0, description="Preferred route distance in km"),
