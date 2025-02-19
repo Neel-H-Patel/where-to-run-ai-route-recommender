@@ -1,17 +1,25 @@
 import axios from "axios";
+import { Route } from "./types";
 
-// Change this to match your FastAPI back-end URL
 const API_BASE_URL = "http://localhost:8000";
 
-export const fetchRoutes = async (location: string, distance = 5.0, safety = "high", elevation = 50.0, terrain = "road") => {
+
+export const fetchRoutes = async (
+    location: string,
+    distance = 5.0,
+    safety = "high",
+    elevation = 50.0,
+    terrain = "road"
+): // @ts-ignore
+    Promise<Route[]> => {
     try {
-        const response = await axios.get(`${API_BASE_URL}/get-ranked-routes`, {
-            params: { location, distance, safety, elevation, terrain } // ✅ Sending as query params
+        const response = await axios.get<Route[]>(`${API_BASE_URL}/get-ranked-routes`, {
+            params: { location, distance, safety, elevation, terrain },
         });
-        return response.data; // API returns an array of ranked routes
+        return response.data;
     } catch (error) {
         console.error("Error fetching routes:", error);
-        return [];
+        return []; // Return empty array on error to prevent crashes
     }
 };
 
