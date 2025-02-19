@@ -13,6 +13,8 @@ app = FastAPI()
 GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
 
 
+# very accurately gets the lat and lng coordinates of any location.
+# Be as specific as possible with your current location.
 @app.get("/get-coords")
 def get_coordinates_from_location(location: str) -> str:
     """Convert a place name to coordinates using Google Maps Geocoding API"""
