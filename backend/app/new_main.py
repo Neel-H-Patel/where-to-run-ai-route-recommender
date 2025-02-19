@@ -2,8 +2,10 @@ from fastapi import FastAPI, Query
 import os
 from dotenv import load_dotenv
 import requests
-from typing import List, Dict
+from typing import List, Dict, Tuple, Optional
 from openai import OpenAI
+import json
+import re
 
 # load environment variables
 load_dotenv()
@@ -14,6 +16,7 @@ app = FastAPI()
 # get API keys from env variables
 GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
 
 # set up client
 client = OpenAI(api_key=OPENAI_API_KEY)
@@ -21,15 +24,15 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 # very accurately gets the lat and lng coordinates of any location.
 # Be as specific as possible with your current location.
 @app.get("/get-coords")
-def get_coordinates_from_location(location: str) -> str:
+def get_coordinates_from_location(location: str) -> Optional[Tuple[float, float]]:
     """Convert a place name to coordinates using Google Maps Geocoding API"""
     url = f"https://maps.googleapis.com/maps/api/geocode/json?address={location}&key={GOOGLE_MAPS_API_KEY}"
     response = requests.get(url).json()
     if response["status"] == "OK":
         lat = response["results"][0]["geometry"]["location"]["lat"]
         lon = response["results"][0]["geometry"]["location"]["lng"]
-        return f"{lat},{lon}"
-    return ""
+        return lat, lon
+    return None
 
 @app.get("/temp-routes")
 def get_temp_routes() -> List[Dict]:
@@ -59,7 +62,32 @@ def fetch_safety_data(routes: List[Dict], location: str):
         ]
     )
 
-    return completion.choices[0].message.content
+    raw_response = completion.choices[0].message.content.strip()  # Remove whitespace
+
+    # Extract JSON using regex in case there is unwanted text
+    match = re.search(r"\[.*\]", raw_response, re.DOTALL)
+    if match:
+        cleaned_json = match.group(0)  # Extract the JSON part
+    else:
+        return {"error": "AI response did not contain valid JSON"}
+
+    try:
+        # Convert the cleaned response to a Python list
+        safety_data = json.loads(cleaned_json)
+        if isinstance(safety_data, list):
+            return safety_data
+        else:
+            return {"error": "Invalid response format"}
+    except json.JSONDecodeError:
+        return {"error": "Failed to parse AI response"}
+
+# gets the weather for whatever location you're currently at/whatever location you inputted
+@app.get("/weather")
+def fetch_weather_data(lat: float, lon: float) -> Dict:
+    """Fetch weather conditions from OpenWeather API using coordinates."""
+    url = f"http://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={OPENWEATHER_API_KEY}"
+    response = requests.get(url)
+    return response.json() if response.status_code == 200 else {"error": "Failed to fetch weather data"}
 
 
 if __name__ == "__main__":
