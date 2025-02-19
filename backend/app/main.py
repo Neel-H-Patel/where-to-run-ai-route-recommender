@@ -1,95 +1,172 @@
 from fastapi import FastAPI, Query
-import requests
 import os
-from typing import List, Dict
 from dotenv import load_dotenv
-import overpass
+import requests
+from typing import List, Dict, Tuple, Optional, Any, Union
+from openai import OpenAI
+import json
+import re
 
+# load environment variables
+load_dotenv()
+
+# initialize backend
 app = FastAPI()
 
-load_dotenv()
-overpass_api = overpass.API()
-
-# API Keys (Set these as environment variables in production)
+# get API keys from env variables
 GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
 
-@app.get("/routes")
-def get_running_routes(
-        location: str,
-        distance: float = Query(..., description="Distance in km"),
-        terrain: str = Query("road", description="Preferred terrain: road, trail, park"),
-        elevation: str = Query("moderate", description="Elevation preference: flat, moderate, steep"),
-        safety: bool = Query(True, description="Consider safety data")
-):
-    """
-    Fetch and rank running routes based on user preferences.
-    """
-    coords = get_coordinates_from_location(location)
+# set up client
+client = OpenAI(api_key=OPENAI_API_KEY)
 
-    # Step 1: Get routes from OpenStreetMap
-    routes = fetch_routes_from_osm(coords, distance, terrain)
-
-    # Step 2: Get safety data from Google Maps (if requested)
-    if safety:
-        routes = fetch_safety_data(routes, location)
-
-    # Step 3: Get weather data
-    weather = fetch_weather_data(location)
-
-    # Step 4: Rank routes based on elevation, safety, and weather
-    ranked_routes = rank_routes(routes, elevation, weather)
-
-    return {"routes": ranked_routes}
-
-
-def get_coordinates_from_location(location: str) -> str:
+# very accurately gets the lat and lng coordinates of any location.
+# Be as specific as possible with your current location.
+def get_coordinates_from_location(location: str) -> Optional[Tuple[float, float]]:
     """Convert a place name to coordinates using Google Maps Geocoding API"""
     url = f"https://maps.googleapis.com/maps/api/geocode/json?address={location}&key={GOOGLE_MAPS_API_KEY}"
     response = requests.get(url).json()
     if response["status"] == "OK":
         lat = response["results"][0]["geometry"]["location"]["lat"]
         lon = response["results"][0]["geometry"]["location"]["lng"]
-        return f"{lat},{lon}"
-    return ""
+        return lat, lon
+    return None
 
-def fetch_routes_from_osm(location: str, distance: float, terrain: str) -> List[Dict]:
-    """Fetch running routes from OpenStreetMap using Overpass API"""
-    query = f'node["name"="{location}"];'
-    response = overpass_api.get(query)
-    print(response)
-    routes = [
-        {"name": feature["properties"].get("name", "Unknown"), "id": feature["id"]}
-        for feature in response.get("features", [])
+def get_temp_routes() -> List[Dict]:
+    """Generate temporary running routes for testing."""
+    return [
+        {"id": 1, "name": "City Park Loop", "distance": 5.2, "elevation": 50, "popularity": 80},
+        {"id": 2, "name": "Mountain Trail Run", "distance": 8.4, "elevation": 200, "popularity": 65},
+        {"id": 3, "name": "Riverfront Jogging Path", "distance": 4.8, "elevation": 30, "popularity": 90},
+        {"id": 4, "name": "Downtown Scenic Route", "distance": 6.1, "elevation": 20, "popularity": 70}
     ]
-    print(routes)
-    return routes
 
-
-def fetch_safety_data(routes: List[Dict], location: str) -> List[Dict]:
+# may be unnecessary as it correlates with popularity closely (inversely though)
+def fetch_safety_data(routes: List[Dict], lat, lon):
     """Fetch safety data from Google Maps API"""
-    url = f"https://maps.googleapis.com/maps/api/place/nearbysearch/json?location={location}&radius=5000&type=police_station&key={GOOGLE_MAPS_API_KEY}"
+    completion = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "Given the following routes and the location, determine a safety score "
+                                          "ranging from 1 to 5 (decimals are fine up to 1 place) for each route and "
+                                          "return the route object again adding 'safety_score' as a key. Return only "
+                                          "the routes as JSON (no explanation)"},
+            {
+                "role": "user",
+                "content": f"location: {lat, lon}\n routes: {routes}\n"
+            }
+        ]
+    )
+
+    return extract_json_from_response(completion.choices[0].message.content)
+
+# gets the weather for whatever location you're currently at/whatever location you inputted
+def fetch_weather_data(lat: float, lon: float) -> Dict:
+    """Fetch weather conditions from OpenWeather API using coordinates."""
+    url = f"http://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={OPENWEATHER_API_KEY}"
     response = requests.get(url)
-    safety_data = response.json()
+    return response.json() if response.status_code == 200 else {"error": "Failed to fetch weather data"}
 
-    for route in routes:
-        print(safety_data)
-        route["safety_score"] = len(safety_data.get("results", []))
-    return routes
-
-
-def fetch_weather_data(location: str) -> Dict:
-    """Fetch weather conditions from OpenWeather API"""
-    url = f"http://api.openweathermap.org/data/2.5/weather?q={location}&appid={OPENWEATHER_API_KEY}&units=metric"
-    response = requests.get(url)
-    return response.json() if response.status_code == 200 else {}
-
-
-def rank_routes(routes: List[Dict], elevation_pref: str, weather: Dict) -> List[Dict]:
+def rank_routes(routes: List[Dict], preferences: Dict, weather: Dict):
     """Rank routes based on elevation, safety, and weather conditions."""
-    for route in routes:
-        route["score"] = 10  # Placeholder ranking logic
-    return sorted(routes, key=lambda x: x["score"], reverse=True)
+    completion = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "Given the following preferences, routes, and weather, rank the routes from "
+                                          "best to worst. Return only the routes in the order that you ranked them"
+                                          " as JSON (no explanation)"},
+            {
+                "role": "user",
+                "content": f"Preferences: {preferences}\n routes: {routes}\n weather: {weather}"
+            }
+        ]
+    )
+
+    return extract_json_from_response(completion.choices[0].message.content)
+
+
+def extract_json_from_response(raw_response: str) -> Union[List[Dict[str, Any]], Dict[str, str]]:
+    """
+    Extracts and parses JSON from an AI response, handling unwanted text.
+
+    Args:
+        raw_response (str): The raw response string from the AI model.
+
+    Returns:
+        Union[List[Dict[str, Any]], Dict[str, str]]: Parsed JSON as a list of dictionaries,
+        or an error dictionary if parsing fails.
+    """
+
+    raw_response = raw_response.strip()  # Remove any leading/trailing whitespace
+
+    # Extract JSON using regex in case there is unwanted text
+    match = re.search(r"\[.*\]", raw_response, re.DOTALL)
+
+    if match:
+        cleaned_json = match.group(0)  # Extract the JSON part
+    else:
+        return {"error": "AI response did not contain valid JSON"}
+
+    try:
+        # Convert the cleaned response to a Python list
+        parsed_data = json.loads(cleaned_json)
+
+        if isinstance(parsed_data, list):
+            return parsed_data
+        else:
+            return {"error": "Invalid response format"}
+
+    except json.JSONDecodeError:
+        return {"error": "Failed to parse AI response"}
+
+@app.post("/get-ranked-routes")
+def get_ranked_routes(
+    location: str,
+    distance: float = Query(5.0, description="Preferred route distance in km"),
+    safety: str = Query("high", description="Preferred safety level: low, moderate, high"),
+    elevation: float = Query(50.0, description="Preferred elevation gain in meters"),
+    terrain: str = Query("road", description="Preferred terrain type: trail, road, park")
+) -> List[Dict]:
+    """
+    Master function: Gets coordinates, weather, safety data, and returns ranked routes.
+    """
+
+    # Step 1: Convert preferences into a dictionary
+    preferences = {
+        "distance": distance,
+        "safety": safety,
+        "elevation": elevation,
+        "terrain": terrain
+    }
+
+    # Step 2: Get coordinates
+    coords = get_coordinates_from_location(location)
+    if not coords:
+        return {"error": "Invalid location provided"}
+
+    lat, lon = coords
+
+    # Step 3: Get weather data
+    weather = fetch_weather_data(lat, lon)
+    if "error" in weather:
+        return {"error": "Could not retrieve weather data"}
+
+    # Step 4: Get temporary routes (this would be replaced by real routes in production)
+    routes = get_temp_routes()
+
+    # Step 5: Fetch safety scores
+    routes_with_safety = fetch_safety_data(routes, lat, lon)
+    if isinstance(routes_with_safety, dict) and "error" in routes_with_safety:
+        return routes_with_safety  # Return error if safety data fails
+
+    # Step 6: Rank routes based on user preferences
+    ranked_routes = rank_routes(routes_with_safety, preferences, weather)
+    if isinstance(ranked_routes, dict) and "error" in ranked_routes:
+        return ranked_routes  # Return error if ranking fails
+
+    return ranked_routes
+
 
 
 if __name__ == "__main__":
