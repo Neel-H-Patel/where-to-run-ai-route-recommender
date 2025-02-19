@@ -2,7 +2,7 @@ from fastapi import FastAPI, Query
 import os
 from dotenv import load_dotenv
 import requests
-from typing import List, Dict, Tuple, Optional, Any
+from typing import List, Dict, Tuple, Optional, Any, Union
 from openai import OpenAI
 import json
 import re
@@ -59,24 +59,7 @@ def fetch_safety_data(routes: List[Dict], lat, lon):
         ]
     )
 
-    raw_response = completion.choices[0].message.content.strip()  # Remove whitespace
-
-    # Extract JSON using regex in case there is unwanted text
-    match = re.search(r"\[.*\]", raw_response, re.DOTALL)
-    if match:
-        cleaned_json = match.group(0)  # Extract the JSON part
-    else:
-        return {"error": "AI response did not contain valid JSON"}
-
-    try:
-        # Convert the cleaned response to a Python list
-        safety_data = json.loads(cleaned_json)
-        if isinstance(safety_data, list):
-            return safety_data
-        else:
-            return {"error": "Invalid response format"}
-    except json.JSONDecodeError:
-        return {"error": "Failed to parse AI response"}
+    return extract_json_from_response(completion.choices[0].message.content)
 
 # gets the weather for whatever location you're currently at/whatever location you inputted
 def fetch_weather_data(lat: float, lon: float) -> Dict:
@@ -100,10 +83,26 @@ def rank_routes(routes: List[Dict], preferences: Dict, weather: Dict):
         ]
     )
 
-    raw_response = completion.choices[0].message.content.strip()  # Remove whitespace
+    return extract_json_from_response(completion.choices[0].message.content)
+
+
+def extract_json_from_response(raw_response: str) -> Union[List[Dict[str, Any]], Dict[str, str]]:
+    """
+    Extracts and parses JSON from an AI response, handling unwanted text.
+
+    Args:
+        raw_response (str): The raw response string from the AI model.
+
+    Returns:
+        Union[List[Dict[str, Any]], Dict[str, str]]: Parsed JSON as a list of dictionaries,
+        or an error dictionary if parsing fails.
+    """
+
+    raw_response = raw_response.strip()  # Remove any leading/trailing whitespace
 
     # Extract JSON using regex in case there is unwanted text
     match = re.search(r"\[.*\]", raw_response, re.DOTALL)
+
     if match:
         cleaned_json = match.group(0)  # Extract the JSON part
     else:
@@ -111,11 +110,13 @@ def rank_routes(routes: List[Dict], preferences: Dict, weather: Dict):
 
     try:
         # Convert the cleaned response to a Python list
-        safety_data = json.loads(cleaned_json)
-        if isinstance(safety_data, list):
-            return safety_data
+        parsed_data = json.loads(cleaned_json)
+
+        if isinstance(parsed_data, list):
+            return parsed_data
         else:
             return {"error": "Invalid response format"}
+
     except json.JSONDecodeError:
         return {"error": "Failed to parse AI response"}
 
