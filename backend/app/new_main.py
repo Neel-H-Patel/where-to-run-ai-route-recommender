@@ -1,7 +1,8 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 import os
 from dotenv import load_dotenv
 import requests
+from typing import List, Dict
 
 # load environment variables
 load_dotenv()
@@ -11,7 +12,6 @@ app = FastAPI()
 
 # get API keys from env variables
 GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
-
 
 # very accurately gets the lat and lng coordinates of any location.
 # Be as specific as possible with your current location.
@@ -25,6 +25,16 @@ def get_coordinates_from_location(location: str) -> str:
         lon = response["results"][0]["geometry"]["location"]["lng"]
         return f"{lat},{lon}"
     return ""
+
+@app.get("/temp-routes")
+def get_temp_routes() -> List[Dict]:
+    """Generate temporary running routes for testing."""
+    return [
+        {"id": 1, "name": "City Park Loop", "distance": 5.2, "elevation": 50, "popularity": 80},
+        {"id": 2, "name": "Mountain Trail Run", "distance": 8.4, "elevation": 200, "popularity": 65},
+        {"id": 3, "name": "Riverfront Jogging Path", "distance": 4.8, "elevation": 30, "popularity": 90},
+        {"id": 4, "name": "Downtown Scenic Route", "distance": 6.1, "elevation": 20, "popularity": 70}
+    ]
 
 
 if __name__ == "__main__":
