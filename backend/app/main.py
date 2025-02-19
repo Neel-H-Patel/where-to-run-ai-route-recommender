@@ -46,10 +46,39 @@ def get_coordinates_from_location(location: str) -> Optional[Tuple[float, float]
 def get_temp_routes() -> List[Dict]:
     """Generate temporary running routes for testing."""
     return [
-        {"id": 1, "name": "City Park Loop", "distance": 5.2, "elevation": 50, "popularity": 80},
-        {"id": 2, "name": "Mountain Trail Run", "distance": 8.4, "elevation": 200, "popularity": 65},
-        {"id": 3, "name": "Riverfront Jogging Path", "distance": 4.8, "elevation": 30, "popularity": 90},
-        {"id": 4, "name": "Downtown Scenic Route", "distance": 6.1, "elevation": 20, "popularity": 70}
+        {
+            "id": 1,
+            "name": "City Park Loop",
+            "distance": 4800,  # meters
+            "elevation_gain": 50,
+            "avg_grade": 2.1,
+            "climb_category": 0,
+            "start_latlng": [40.73061, -73.935242],
+            "end_latlng": [40.73581, -73.935242],
+            "polyline": "s|wF|nqbM?`@Dl@Dx@Hv@Jr@Pt@dA|AxAbBl@`A"
+        },
+        {
+            "id": 2,
+            "name": "Riverfront Jogging Path",
+            "distance": 5200,
+            "elevation_gain": 30,
+            "avg_grade": 1.5,
+            "climb_category": 0,
+            "start_latlng": [40.7210, -74.0100],
+            "end_latlng": [40.7250, -74.0100],
+            "polyline": "o|wFdvqbM?^Bb@F`@Jr@Px@Vx@Xx@"
+        },
+        {
+            "id": 3,
+            "name": "Mountain Trail Run",
+            "distance": 8400,
+            "elevation_gain": 200,
+            "avg_grade": 6.3,
+            "climb_category": 1,
+            "start_latlng": [40.8001, -74.0100],
+            "end_latlng": [40.8051, -74.0150],
+            "polyline": "q|wFvzrbMD`@Jt@Rx@Zx@^z@"
+        }
     ]
 
 # may be unnecessary as it correlates with popularity closely (inversely though)
@@ -84,7 +113,7 @@ def rank_routes(routes: List[Dict], preferences: Dict, weather: Dict):
         model="gpt-4o-mini",
         messages=[
             {"role": "system", "content": "Given the following preferences, routes, and weather, rank the routes from "
-                                          "best to worst. Return only the routes in the order that you ranked them"
+                                          "best to worst. Return only the routes with all their info in the order that you ranked them"
                                           " as JSON (no explanation)"},
             {
                 "role": "user",
