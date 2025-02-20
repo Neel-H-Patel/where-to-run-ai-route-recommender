@@ -1,4 +1,5 @@
-from fastapi import FastAPI, Query
+import httpx
+from fastapi import FastAPI, Query, HTTPException
 import os
 from dotenv import load_dotenv
 import requests
@@ -27,6 +28,8 @@ app.add_middleware(
 GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
+STRAVA_ACCESS_TOKEN = os.getenv("STRAVA_ACCESS_TOKEN")
+STRAVA_API_URL = "https://www.strava.com/api/v3"
 
 # set up client
 client = OpenAI(api_key=OPENAI_API_KEY)
@@ -42,6 +45,50 @@ def get_coordinates_from_location(location: str) -> Optional[Tuple[float, float]
         lon = response["results"][0]["geometry"]["location"]["lng"]
         return lat, lon
     return None
+
+@app.get("/strava/routes")
+async def get_strava_routes(lat: float, lon: float, radius: float = 5.0):
+    """
+    Fetch public running routes near a given location.
+    - `lat`: Latitude of search center
+    - `lon`: Longitude of search center
+    - `radius`: Search radius in km (default: 5km)
+    """
+
+    # Convert radius to bounding box (roughly, ±0.05 degrees ≈ 5km)
+    bounds = f"{lat - 0.05},{lon - 0.05},{lat + 0.05},{lon + 0.05}"
+
+    url = f"{STRAVA_API_URL}/segments/explore"
+
+    headers = {"Authorization": f"Bearer {STRAVA_ACCESS_TOKEN}"}
+    params = {"bounds": bounds, "activity_type": "running"}
+
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url, headers=headers, params=params)
+
+        if response.status_code != 200:
+            raise HTTPException(status_code=response.status_code, detail="Error fetching routes from Strava")
+
+        data = response.json().get("segments", [])
+
+        # Extract only the required keys
+        filtered_routes = [
+            {
+                "id": route["id"],
+                "name": route["name"],
+                "distance": route["distance"],
+                "elev_difference": route["elev_difference"],  # Adjust based on API response
+                "avg_grade": route["avg_grade"],
+                "climb_category": route["climb_category"],
+                "start_latlng": route["start_latlng"],
+                "end_latlng": route["end_latlng"],
+                "points": route["points"],  # Renaming polyline to points
+            }
+            for route in data
+        ]
+
+        return filtered_routes
+
 
 def get_temp_routes() -> List[Dict]:
     """Generate temporary running routes for testing."""
@@ -191,8 +238,8 @@ def get_ranked_routes(
     if "error" in weather:
         return {"error": "Could not retrieve weather data"}
 
-    # Step 4: Get temporary routes (this would be replaced by real routes in production)
-    routes = get_temp_routes()
+    # Step 4: Get running routes from Strava for current location
+    routes = get_strava_routes(lat, lon)
 
     # Step 5: Fetch safety scores
     routes_with_safety = fetch_safety_data(routes, lat, lon)
