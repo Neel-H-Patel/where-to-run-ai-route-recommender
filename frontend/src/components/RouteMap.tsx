@@ -1,26 +1,17 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Map, Marker } from "@vis.gl/react-google-maps";
-import { Route } from "../types"; // Import Route interface
-import { fetchRoutes } from "../api"; // Import API call function
+import { Route } from "../types";
 
 const DEFAULT_CENTER = { lat: 40.73061, lng: -73.935242 }; // Default location (NYC)
 
-const RouteMap: React.FC = () => {
-    const [routes, setRoutes] = useState<Route[]>([]);
+interface RouteMapProps {
+    routes: Route[];
+}
 
-    useEffect(() => {
-        // @ts-ignore
-        const loadRoutes = async () => {
-            const fetchedRoutes = await fetchRoutes("New York, NY", 5.0, "high", 50.0, "road");
-            setRoutes(fetchedRoutes);
-        };
-
-        loadRoutes();
-    }, []);
-
+const RouteMap: React.FC<RouteMapProps> = ({ routes }) => {
     return (
         <Map defaultZoom={13} defaultCenter={DEFAULT_CENTER} style={{ width: "100%", height: "500px" }}>
-            {routes.map((route: Route) => (
+            {routes.map((route) => (
                 <React.Fragment key={route.id}>
                     {/* Start Marker */}
                     <Marker position={{ lat: route.start_latlng[0], lng: route.start_latlng[1] }} title={route.name} />
