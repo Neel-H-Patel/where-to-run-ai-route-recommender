@@ -47,7 +47,7 @@ def get_coordinates_from_location(location: str) -> Optional[Tuple[float, float]
     return None
 
 @app.get("/strava/routes")
-async def get_strava_routes(lat: float, lon: float, radius: float = 5.0):
+async def get_strava_routes(lat: float, lon: float, radius: float = 5.0) -> List[Dict]:
     """
     Fetch public running routes near a given location.
     - `lat`: Latitude of search center
@@ -207,7 +207,7 @@ def extract_json_from_response(raw_response: str) -> Union[List[Dict[str, Any]],
         return {"error": "Failed to parse AI response"}
 
 @app.get("/get-ranked-routes")
-def get_ranked_routes(
+async def get_ranked_routes(
     location: str,
     distance: float = Query(5.0, description="Preferred route distance in km"),
     safety: str = Query("high", description="Preferred safety level: low, moderate, high"),
@@ -220,7 +220,7 @@ def get_ranked_routes(
 
     # Step 1: Convert preferences into a dictionary
     preferences = {
-        "distance": distance,
+        "distance": distance * 1000,
         "safety": safety,
         "elevation": elevation,
         "terrain": terrain
@@ -232,6 +232,7 @@ def get_ranked_routes(
         return {"error": "Invalid location provided"}
 
     lat, lon = coords
+    print(lat, lon)
 
     # Step 3: Get weather data
     weather = fetch_weather_data(lat, lon)
@@ -239,15 +240,15 @@ def get_ranked_routes(
         return {"error": "Could not retrieve weather data"}
 
     # Step 4: Get running routes from Strava for current location
-    routes = get_strava_routes(lat, lon)
+    routes = await get_strava_routes(lat, lon)
 
-    # Step 5: Fetch safety scores
-    routes_with_safety = fetch_safety_data(routes, lat, lon)
-    if isinstance(routes_with_safety, dict) and "error" in routes_with_safety:
-        return routes_with_safety  # Return error if safety data fails
+    # # Step 5: Fetch safety scores
+    # routes_with_safety = fetch_safety_data(routes, lat, lon)
+    # if isinstance(routes_with_safety, dict) and "error" in routes_with_safety:
+    #     return routes_with_safety  # Return error if safety data fails
 
     # Step 6: Rank routes based on user preferences
-    ranked_routes = rank_routes(routes_with_safety, preferences, weather)
+    ranked_routes = rank_routes(routes, preferences, weather)
     if isinstance(ranked_routes, dict) and "error" in ranked_routes:
         return ranked_routes  # Return error if ranking fails
 
