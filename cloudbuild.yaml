@@ -31,4 +31,5 @@ steps:
            '--image', 'us-central1-docker.pkg.dev/$PROJECT_ID/my-repo/frontend:latest',
            '--platform', 'managed',
            '--region', 'us-central1',
-           '--allow-unauthenticated']
+           '--allow-unauthenticated',
+           '--set-secrets=NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=google-maps-api-key:latest']
