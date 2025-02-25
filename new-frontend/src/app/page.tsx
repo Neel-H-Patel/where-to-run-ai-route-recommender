@@ -36,6 +36,7 @@ export default function Home() {
         lat: fetchedRoutes[0].start_latlng[0],
         lng: fetchedRoutes[0].start_latlng[1],
       });
+      setSelectedRoute(fetchedRoutes[0]);
     }
   };
 

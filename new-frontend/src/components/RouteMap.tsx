@@ -2,6 +2,7 @@
 
 import { Route } from "@/types";
 import { Map, Marker } from "@vis.gl/react-google-maps";
+import React from "react";
 
 interface RouteMapProps {
     selectedRoute: Route | null;
@@ -10,11 +11,19 @@ interface RouteMapProps {
 
 const RouteMap: React.FC<RouteMapProps> = ({ selectedRoute, center }) => {
     return (
-        <Map defaultZoom={13} center={center} className="w-full md:w-1/2 h-[500px] rounded-md shadow">
+        <Map defaultZoom={13} center={center} className="w-full h-[500px] rounded-md shadow">
             {selectedRoute && (
                 <>
-                    <Marker position={{ lat: selectedRoute.start_latlng[0], lng: selectedRoute.start_latlng[1] }} title={selectedRoute.name} />
-                    <Marker position={{ lat: selectedRoute.end_latlng[0], lng: selectedRoute.end_latlng[1] }} title={`${selectedRoute.name} (End)`} />
+                    <Marker
+                        key={`start-${selectedRoute.id}`}
+                        position={{ lat: selectedRoute.start_latlng[0], lng: selectedRoute.start_latlng[1] }}
+                        title={`${selectedRoute.name} - Start`}
+                    />
+                    <Marker
+                        key={`end-${selectedRoute.id}`}
+                        position={{ lat: selectedRoute.end_latlng[0], lng: selectedRoute.end_latlng[1] }}
+                        title={`${selectedRoute.name} - End`}
+                    />
                 </>
             )}
         </Map>

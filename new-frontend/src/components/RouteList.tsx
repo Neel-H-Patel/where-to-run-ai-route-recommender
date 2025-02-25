@@ -1,6 +1,7 @@
 'use client';
 
 import { Route } from "@/types";
+import React from "react";
 
 interface RouteListProps {
     routes: Route[];
