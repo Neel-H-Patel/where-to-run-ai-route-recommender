@@ -17,7 +17,7 @@ steps:
 
   # Build & push frontend image with platform flag
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '--platform=linux/amd64', '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/my-repo/frontend:latest', './frontend']
+    args: ['build', '--platform=linux/amd64', '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/my-repo/frontend:latest', './new-frontend']
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/my-repo/frontend:latest']
 
