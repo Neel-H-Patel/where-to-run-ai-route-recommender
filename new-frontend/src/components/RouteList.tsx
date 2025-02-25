@@ -12,26 +12,29 @@ interface RouteListProps {
 
 const RouteList: React.FC<RouteListProps> = ({ routes, loading, selectedRoute, setSelectedRoute }) => {
     return (
-        <div className="p-6 bg-white dark:bg-gray-800 shadow rounded-md w-full md:w-1/2 max-w-lg">
-            <h2 className="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-200">Route Recommendations</h2>
-            {loading && <p className="text-gray-500 dark:text-gray-400">Loading routes...</p>}
-            {!loading && routes.length === 0 && <p className="text-gray-500 dark:text-gray-400">No routes found. Try adjusting your filters.</p>}
+        <div className="p-6 bg-white dark:bg-gray-900 shadow-lg rounded-lg w-full md:w-1/2 max-w-lg border dark:border-gray-700">
+            <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">Recommended Routes</h2>
+
+            {loading && <p className="text-gray-500 dark:text-gray-400 animate-pulse">Fetching routes...</p>}
+            {!loading && routes.length === 0 && <p className="text-gray-500 dark:text-gray-400">No routes found. Try different filters.</p>}
+
             {!loading && routes.length > 0 && (
-                <ul className="divide-y divide-gray-300 dark:divide-gray-600">
+                <ul className="divide-y divide-gray-300 dark:divide-gray-700">
                     {routes.map((route) => (
                         <li
                             key={route.id}
                             onClick={() => setSelectedRoute(route)}
-                            className={`p-4 cursor-pointer transition-all rounded-md ${
+                            className={`p-4 cursor-pointer rounded-lg transition-all duration-300 shadow-sm ${
                                 selectedRoute?.id === route.id
-                                    ? "bg-blue-100 dark:bg-blue-700"
-                                    : "hover:bg-gray-100 dark:hover:bg-gray-700"
+                                    ? "bg-blue-500 text-white shadow-md"
+                                    : "hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-800 dark:text-gray-200"
                             }`}
                         >
-                            <b className="text-gray-900 dark:text-gray-100">{route.name}</b> - {(route.distance / 1000).toFixed(1)} km, {route.elev_difference} m elevation gain
-                            <br />Avg Grade: {route.avg_grade}%, Climb Category: {route.climb_category}
-                            <br />Start: {route.start_latlng[0]}, {route.start_latlng[1]}
-                            <br />End: {route.end_latlng[0]}, {route.end_latlng[1]}
+                            <b className="block">{route.name}</b>
+                            <span className="text-sm opacity-80">📍 {route.start_latlng.join(", ")} → {route.end_latlng.join(", ")}</span>
+                            <div className="text-xs opacity-70">
+                                {route.distance / 1000} km | Elevation: {route.elev_difference}m | Avg Grade: {route.avg_grade}%
+                            </div>
                         </li>
                     ))}
                 </ul>
