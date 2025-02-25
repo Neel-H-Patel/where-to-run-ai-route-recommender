@@ -43,7 +43,7 @@ export default function Home() {
                 priority
             />
             <UserPreferencesForm onSubmit={handleRouteSearch} />
-            <RouteList routes={routes} loading={loading} setSelectedRoute={setSelectedRoute} />
+            <RouteList routes={routes} loading={loading} selectedRoute={selectedRoute} setSelectedRoute={setSelectedRoute} />
             <RouteMap selectedRoute={selectedRoute} />
           </main>
         </div>
