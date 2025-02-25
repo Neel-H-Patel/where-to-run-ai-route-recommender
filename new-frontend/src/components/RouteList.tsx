@@ -11,7 +11,7 @@ interface RouteListProps {
 
 const RouteList: React.FC<RouteListProps> = ({ routes, loading, selectedRoute, setSelectedRoute }) => {
     return (
-        <div className="p-6 bg-white dark:bg-gray-800 shadow rounded-md w-full max-w-lg">
+        <div className="p-6 bg-white dark:bg-gray-800 shadow rounded-md w-full md:w-1/2 max-w-lg">
             <h2 className="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-200">Route Recommendations</h2>
             {loading && <p className="text-gray-500 dark:text-gray-400">Loading routes...</p>}
             {!loading && routes.length === 0 && <p className="text-gray-500 dark:text-gray-400">No routes found. Try adjusting your filters.</p>}

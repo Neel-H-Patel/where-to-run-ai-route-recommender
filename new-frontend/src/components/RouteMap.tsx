@@ -10,7 +10,7 @@ interface RouteMapProps {
 
 const RouteMap: React.FC<RouteMapProps> = ({ selectedRoute, center }) => {
     return (
-        <Map defaultZoom={13} center={center} className="w-full h-[500px] rounded-md shadow">
+        <Map defaultZoom={13} center={center} className="w-full md:w-1/2 h-[500px] rounded-md shadow">
             {selectedRoute && (
                 <>
                     <Marker position={{ lat: selectedRoute.start_latlng[0], lng: selectedRoute.start_latlng[1] }} title={selectedRoute.name} />

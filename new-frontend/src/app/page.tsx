@@ -42,10 +42,12 @@ export default function Home() {
   return (
       <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY as string} libraries={["geometry"]}>
         <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-          <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
+          <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start w-full">
             <UserPreferencesForm onSubmit={handleRouteSearch} />
-            <RouteList routes={routes} loading={loading} selectedRoute={selectedRoute} setSelectedRoute={setSelectedRoute} />
-            <RouteMap selectedRoute={selectedRoute} center={mapCenter} />
+            <div className="flex flex-col md:flex-row gap-6 w-full">
+              <RouteList routes={routes} loading={loading} selectedRoute={selectedRoute} setSelectedRoute={setSelectedRoute} />
+              <RouteMap selectedRoute={selectedRoute} center={mapCenter} />
+            </div>
           </main>
         </div>
       </APIProvider>
