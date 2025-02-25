@@ -20,7 +20,7 @@ WORKDIR /app
 COPY --from=builder /app ./
 
 # expose the port Next.js runs on
-EXPOSE 3000
+EXPOSE 8080
 
 # start Next.js in production mode
 CMD ["npm", "run", "start"]
