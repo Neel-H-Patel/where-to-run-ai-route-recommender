@@ -10,13 +10,21 @@ import { fetchRoutes } from "@/lib/api";
 
 const DEFAULT_CENTER = { lat: 40.73061, lng: -73.935242 }; // Default location (NYC)
 
+interface RoutePreferences {
+    location: string;
+    distance: number;
+    safety: string;
+    elevation: number;
+    terrain: string;
+}
+
 export default function Home() {
   const [routes, setRoutes] = useState<Route[]>([]);
   const [selectedRoute, setSelectedRoute] = useState<Route | null>(null);
   const [loading, setLoading] = useState(false);
   const [mapCenter, setMapCenter] = useState(DEFAULT_CENTER);
 
-  const handleRouteSearch = async (preferences: any) => {
+  const handleRouteSearch = async (preferences: RoutePreferences) => {
     setLoading(true);
     console.log("Fetching routes with preferences:", preferences);
 
