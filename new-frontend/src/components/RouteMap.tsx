@@ -3,15 +3,14 @@
 import { Route } from "@/types";
 import { Map, Marker } from "@vis.gl/react-google-maps";
 
-const DEFAULT_CENTER = { lat: 40.73061, lng: -73.935242 }; // Default location (NYC)
-
 interface RouteMapProps {
     selectedRoute: Route | null;
+    center: { lat: number; lng: number };
 }
 
-const RouteMap: React.FC<RouteMapProps> = ({ selectedRoute }) => {
+const RouteMap: React.FC<RouteMapProps> = ({ selectedRoute, center }) => {
     return (
-        <Map defaultZoom={13} defaultCenter={DEFAULT_CENTER} className="w-full h-[500px] rounded-md shadow">
+        <Map defaultZoom={13} center={center} className="w-full h-[500px] rounded-md shadow">
             {selectedRoute && (
                 <>
                     <Marker position={{ lat: selectedRoute.start_latlng[0], lng: selectedRoute.start_latlng[1] }} title={selectedRoute.name} />
