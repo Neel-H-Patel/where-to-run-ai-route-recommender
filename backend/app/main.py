@@ -161,7 +161,7 @@ def rank_routes(routes: List[Dict], preferences: Dict, weather: Dict):
         messages=[
             {"role": "system", "content": "Given the following preferences, routes, and weather, rank the routes from "
                                           "best to worst. Return only the routes with all their info in the order that you ranked them"
-                                          " as JSON (no explanation)"},
+                                          " as JSON (no explanation). Return only the top 3 routes."},
             {
                 "role": "user",
                 "content": f"Preferences: {preferences}\n routes: {routes}\n weather: {weather}"
