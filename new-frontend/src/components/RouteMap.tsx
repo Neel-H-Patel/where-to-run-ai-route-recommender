@@ -11,7 +11,7 @@ interface RouteMapProps {
 
 const RouteMap: React.FC<RouteMapProps> = ({ selectedRoute, center }) => {
     return (
-        <Map defaultZoom={13} center={center} className="w-full h-[500px] rounded-md shadow">
+        <Map defaultZoom={13} center={center} className="w-full rounded-md shadow">
             {selectedRoute && (
                 <>
                     <Marker

@@ -19,7 +19,7 @@ const UserPreferencesForm: React.FC<UserPreferencesFormProps> = ({ onSubmit }) =
     };
 
     return (
-        <form onSubmit={handleSubmit} className="flex flex-wrap gap-4 p-6 bg-gray-100 dark:bg-gray-800 rounded-md shadow">
+        <form onSubmit={handleSubmit} className="flex flex-wrap w-full justify-center gap-4 p-6 bg-gray-100 dark:bg-gray-800 rounded-md shadow">
             <input
                 type="text"
                 placeholder="Enter location"
