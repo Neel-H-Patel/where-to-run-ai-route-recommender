@@ -9,7 +9,6 @@ import RouteMap from "@/components/RouteMap";
 import { fetchRoutes } from "@/lib/api";
 
 const DEFAULT_CENTER = { lat: 40.73061, lng: -73.935242 }; // Default location (NYC)
-const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
 interface RoutePreferences {
     location: string;
@@ -50,7 +49,7 @@ export default function Home() {
   };
 
   return (
-  <APIProvider apiKey={googleMapsApiKey as string} libraries={["geometry"]}>
+  <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "" as string} libraries={["geometry"]}>
     <div className="grid grid-rows-[auto_1fr_auto] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
 
       {/* Header */}

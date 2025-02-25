@@ -1,7 +1,7 @@
 import axios from "axios";
 import { Route } from "@/types";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://backend-service-7spuon2lra-uc.a.run.app";
+const API_BASE_URL = "https://backend-service-7spuon2lra-uc.a.run.app";
 
 /**
  * Fetch ranked routes based on user preferences.
