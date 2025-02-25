@@ -32,4 +32,4 @@ steps:
            '--platform', 'managed',
            '--region', 'us-central1',
            '--allow-unauthenticated',
-           '--set-secrets=NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=google-maps-api-key:latest']
+           '--set-secrets', 'NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=google-maps-api-key:latest']
