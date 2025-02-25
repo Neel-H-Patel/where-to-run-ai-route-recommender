@@ -1,3 +1,5 @@
+options:
+  logging: CLOUD_LOGGING_ONLY
 steps:
   # Build & push backend image
   - name: 'gcr.io/cloud-builders/docker'
