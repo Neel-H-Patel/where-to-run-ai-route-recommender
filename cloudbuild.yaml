@@ -32,4 +32,7 @@ steps:
            '--platform', 'managed',
            '--region', 'us-central1',
            '--allow-unauthenticated',
-           '--set-secrets', 'GOOGLE_MAPS_API_KEY=google-maps-api-key:latest']
+           '--set-secrets', 'GOOGLE_MAPS_API_KEY=google-maps-api-key:latest',
+           '--set-secrets', 'OPENAI_API_KEY=openai-api-key:latest',
+           '--set-secrets', 'OPENWEATHER_API_KEY=openweather-api-key:latest',
+           '--set-secrets', 'STRAVA_ACCESS_TOKEN=strava-access-token:latest']
