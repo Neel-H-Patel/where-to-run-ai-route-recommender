@@ -11,8 +11,8 @@ RUN npm install
 # copy rest of frontend files
 COPY . .
 
-# build Next.js app
-RUN npm run build
+## build Next.js app
+#RUN npm run build
 
 # serve using a minimal server
 FROM node:22-alpine
@@ -22,5 +22,5 @@ COPY --from=builder /app ./
 # expose the port Next.js runs on
 EXPOSE 8080
 
-# start Next.js in production mode
-CMD ["npm", "run", "start"]
+# start Next.js in production mode (checking dev mode rq)
+CMD ["npm", "run", "dev"]
