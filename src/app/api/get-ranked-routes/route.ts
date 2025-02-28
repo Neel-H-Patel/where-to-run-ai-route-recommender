@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Client from "openai";
+import OpenAI from "openai";
 
 const googleMapsApiKey = process.env.GOOGLE_MAPS_API_KEY;
 const openWeatherApiKey = process.env.OPENWEATHER_API_KEY;
@@ -8,7 +8,7 @@ const openaiApiKey = process.env.OPENAI_API_KEY;
 
 
 // initialize OpenAI client
-const client = new Client({ apiKey: openaiApiKey });
+const client = new OpenAI({ apiKey: openaiApiKey });
 
 // Define types for better type safety
 type Route = {
