@@ -48,7 +48,7 @@ async function getCoordinatesFromLocation(location: string): Promise<{ lat: numb
     return null;
 }
 
-// add radius later to replace 0.05
+// add radius to replace 0.05
 async function getStravaRoutes(lat: number, lon: number): Promise<Route[]> {
     const bounds = `${lat - 0.05},${lon - 0.05},${lat + 0.05},${lon + 0.05}`;
     const url = `https://www.strava.com/api/v3/segments/explore?bounds=${bounds}&activity_type=running`;
