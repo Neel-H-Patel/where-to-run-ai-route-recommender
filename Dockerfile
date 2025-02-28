@@ -22,5 +22,5 @@ COPY --from=builder /app ./
 # expose the port Next.js runs on
 EXPOSE 8080
 
-# start Next.js in production mode (checking dev mode rq)
+# start Next.js in dev mode
 CMD ["npm", "run", "dev"]
