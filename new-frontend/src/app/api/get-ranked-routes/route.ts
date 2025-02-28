@@ -32,6 +32,8 @@ type Preferences = {
 
 type ExtractJsonResult = Route[] | { error: string };
 
+type Weather = {string: string}
+
 // helper functions
 async function getCoordinatesFromLocation(location: string): Promise<{ lat: number; lng: number } | null> {
     const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${location}&key=${googleMapsApiKey}`;
@@ -62,9 +64,9 @@ async function getStravaRoutes(lat: number, lon: number): Promise<Route[]> {
     }
 
     const data = await response.json();
-    const segments = data.segments || [];
+    const segments: Route[] = data.segments || [];
 
-    return segments.map((route: any) => ({
+    return segments.map((route) => ({
         id: route.id,
         name: route.name,
         distance: route.distance,
@@ -77,7 +79,7 @@ async function getStravaRoutes(lat: number, lon: number): Promise<Route[]> {
     }));
 }
 
-async function fetchWeatherData(lat: number, lon: number) {
+async function fetchWeatherData(lat: number, lon: number): Promise<Weather> {
     const url = `http://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${openWeatherApiKey}`;
     const response = await fetch(url);
     if (!response.ok) {
@@ -96,7 +98,6 @@ function extractJsonFromResponse(rawResponse: string): ExtractJsonResult {
     const trimmedResponse = rawResponse.trim();
 
     // Extract JSON using regex in case there is unwanted text
-    // @ts-ignore
     const match = /\[.*\]/s.exec(trimmedResponse);
 
     if (match) {
@@ -110,8 +111,8 @@ function extractJsonFromResponse(rawResponse: string): ExtractJsonResult {
             } else {
                 return { error: "Invalid response format: Expected an array" };
             }
-        } catch (error: any) {
-            return { error: `Failed to parse AI response: ${error.message}` };
+        } catch (error) {
+            return { error: `Failed to parse AI response: ${error}` };
         }
     } else {
         return { error: "AI response did not contain valid JSON" };
@@ -124,10 +125,9 @@ function extractJsonFromResponse(rawResponse: string): ExtractJsonResult {
  * @param {Route[]} routes - A list of route objects.
  * @param {Preferences} preferences - User preferences for route selection.
  * @param {Weather} weather - Weather conditions for the location.
- * @param {OpenAI} client - OpenAI client
  * @returns {Promise<Route[]>} A promise that resolves with the ranked list of routes.
  */
-async function rankRoutes(routes: Route[], preferences: Preferences, weather: any): Promise<Route[]> {
+async function rankRoutes(routes: Route[], preferences: Preferences, weather: Weather): Promise<Route[]> {
     try {
         const completion = await client.chat.completions.create({
             model: "gpt-4o-mini",
@@ -161,9 +161,9 @@ async function rankRoutes(routes: Route[], preferences: Preferences, weather: an
         }
 
         return extractedJson as Route[];
-    } catch (error: any) {
+    } catch (error) {
         console.error("Error during route ranking:", error);
-        throw new Error(`Failed to rank routes: ${error.message}`);
+        throw new Error(`Failed to rank routes: ${error}`);
     }
 }
 
@@ -197,7 +197,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         const { lat, lng } = coords;
 
         const weather = await fetchWeatherData(lat, lng);
-        if (!weather || weather.error) {
+        if (!weather) {
             return NextResponse.json({ error: 'Could not retrieve weather data' }, { status: 500 });
         }
 
@@ -206,8 +206,8 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         const rankedRoutes = await rankRoutes(routes, preferences, weather);
         return NextResponse.json(rankedRoutes);
 
-    } catch (error: any) {
+    } catch (error) {
         console.error("Error in /get-ranked-routes:", error);
-        return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+        return NextResponse.json({ error: error || 'Internal Server Error' }, { status: 500 });
     }
 }
