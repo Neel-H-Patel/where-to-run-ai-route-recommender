@@ -6,7 +6,6 @@ import { Route } from "@/types";
 import UserPreferencesForm from "@/components/UserPreferencesForm";
 import RouteList from "@/components/RouteList";
 import RouteMap from "@/components/RouteMap";
-import { fetchRoutes } from "@/lib/api";
 
 const DEFAULT_CENTER = { lat: 40.73061, lng: -73.935242 }; // Default location (NYC)
 
@@ -24,29 +23,53 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [mapCenter, setMapCenter] = useState(DEFAULT_CENTER);
 
-  const handleRouteSearch = async (preferences: RoutePreferences) => {
-    setLoading(true);
-    console.log("Fetching routes with preference:", preferences);
+const handleRouteSearch = async (preferences: RoutePreferences) => {
+    try {
+        setLoading(true);
+        console.log("Fetching routes with preference:", preferences);
 
-    const fetchedRoutes = await fetchRoutes(
-        preferences.location,
-        preferences.distance,
-        preferences.safety,
-        preferences.elevation,
-        preferences.terrain
-    );
+        const response = await fetch(`/api/get-ranked-routes?location=${preferences.location}&distance=${preferences.distance}&safety=${preferences.safety}&elevation=${preferences.elevation}&terrain=${preferences.terrain}`, {
+            headers: {
+                Accept: "application/json",
+            },
+        });
 
-    setRoutes(fetchedRoutes);
-    setLoading(false);
+        if (!response.ok) {
+            console.error(`HTTP error! status: ${response.status}`);
+            throw new Error(`Failed to fetch routes: ${response.statusText}`);
+        }
 
-    if (fetchedRoutes.length > 0) {
-      setMapCenter({
-        lat: fetchedRoutes[0].start_latlng[0],
-        lng: fetchedRoutes[0].start_latlng[1],
-      });
-      setSelectedRoute(fetchedRoutes[0]);
+        const fetchedRoutes: Route[] = await response.json();
+        console.log("Fetched routes:", fetchedRoutes);
+
+        setRoutes(fetchedRoutes);
+
+        if (fetchedRoutes && fetchedRoutes.length > 0) {
+            // **ADD THIS CHECK:** Ensure start_latlng exists before accessing it
+            if (fetchedRoutes[0].start_latlng) {
+                setMapCenter({
+                    lat: fetchedRoutes[0].start_latlng[0],
+                    lng: fetchedRoutes[0].start_latlng[1],
+                });
+                setSelectedRoute(fetchedRoutes[0]);
+            } else {
+                console.warn("start_latlng is undefined for the first route.");
+                // Handle the case where start_latlng is missing.  Maybe set a default map center
+                setMapCenter({ lat: 0, lng: 0 }); // Default to 0, 0
+                setSelectedRoute(null);
+            }
+        } else {
+            console.warn("No routes found for the given preferences.");
+            setMapCenter({ lat: 0, lng: 0 });
+            setSelectedRoute(null);
+        }
+    } catch (error) {
+        console.error("Error fetching routes:", error);
+    } finally {
+        setLoading(false);
     }
-  };
+};
+
 
   return (
   <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "" as string} libraries={["geometry"]}>
