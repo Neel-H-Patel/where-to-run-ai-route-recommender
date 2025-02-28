@@ -26,7 +26,7 @@ export default function Home() {
 
   const handleRouteSearch = async (preferences: RoutePreferences) => {
     setLoading(true);
-    console.log("Fetching routes with preferences:", preferences);
+    console.log("Fetching routes with preference:", preferences);
 
     const fetchedRoutes = await fetchRoutes(
         preferences.location,
